@@ -1,0 +1,11 @@
+package com.booking.client;
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import io.restassured.http.ContentType;
+
+import static io.restassured.RestAssured.given;
+
+public class BookingClient {
+    private static final String BASE_URL = "https://automationintesting.online/api";
+}

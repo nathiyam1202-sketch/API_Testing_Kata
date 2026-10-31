@@ -1,5 +1,6 @@
 package com.booking.stepdefinitions;
 
+import com.booking.config.ConfigReader;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
@@ -15,7 +16,7 @@ public class GetMessages {
 
         response = given().log().all()
                         .when()
-                        .get("https://automationintesting.online/api/message");
+                        .get(ConfigReader.getBaseUrl() + "/message");
     }
 
     @Then("I should receive all existing messages")

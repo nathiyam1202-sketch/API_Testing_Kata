@@ -5,6 +5,13 @@ API Testing and Java Exercise: Setting up a Basic API Test Automation Framework.
 ## Objective
 The objective of this exercise is to evaluate your knowledge on API testing and Java by setting up a basic API Test Automation framework using Rest-Assured and Cucumber. You will need to create a test suite that executes a few tests against one endpoint of a hotel booking website and evaluates their responses.
 
+## API Configuration
+The API base URL is defined in `src/test/resources/config.properties`. Override it for a test run with a JVM system property:
+
+```shell
+mvn test -Dbase.url=https://your-api-host/api
+```
+
 ## Background
 The application under test is a simple hotel booking website where you can book a room and also send a form with a request.
 
