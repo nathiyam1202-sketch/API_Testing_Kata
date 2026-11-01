@@ -5,17 +5,17 @@ import io.cucumber.java.After;
 import io.cucumber.java.Before;
 
 public class TestContextHooks {
-    @Before
-    public void initializeScenarioContext() {
-        TestContext.startScenario();
-    }
+  @Before
+  public void initializeScenarioContext() {
+    TestContext.startScenario();
+  }
 
-    @After
-    public void cleanupScenario() {
-        try {
-            TestContext.runCleanupActions();
-        } finally {
-            TestContext.clear();
-        }
+  @After
+  public void cleanupScenario() {
+    try {
+      TestContext.runCleanupActions();
+    } finally {
+      TestContext.clear();
     }
+  }
 }
