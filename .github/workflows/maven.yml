@@ -41,8 +41,6 @@ jobs:
             target/cucumber-reports.html
             target/cucumber.json
             target/cucumber.xml
-            target/allure-results/
-            target/site/allure-maven-plugin/
             target/surefire-reports/
           if-no-files-found: warn
           retention-days: 14

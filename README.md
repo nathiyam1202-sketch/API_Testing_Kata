@@ -1,192 +1,96 @@
-# API Testing Kata
+# Booking API Testing Framework
 
-A Java 17 API test automation framework for the Restful Booker practice API. It uses Rest-Assured for HTTP requests and assertions, Cucumber/Gherkin for BDD scenarios, Maven for builds, and Allure plus Cucumber reports for test results.
+A Java 17 test framework for the Booking API, using Rest-Assured for HTTP interactions, Cucumber/Gherkin for behavior scenarios, and Maven for builds and execution. The automated Cucumber runner is scoped to the Booking feature.
 
-## Technology Stack
+## Requirements
 
-- **Java 17** — Programming language
-- **Rest-Assured** — REST API testing and response validation
-- **Cucumber** — Behavior-Driven Development (BDD)
-- **Gherkin** — Readable API test scenarios
-- **Maven** — Build and dependency management
-- **Allure** — Test reporting
-- **Git** — Version control
-- **GitHub Actions** — Continuous integration
+- Java 17
+- Maven 3.9 or later
 
-## Project Structure
+## Configuration
 
-```text
-src/
-└── test/
-    ├── java/com/booking/
-    │   ├── client/             # API clients
-    │   ├── config/             # Configuration loading
-    │   ├── context/            # Scenario-scoped state and cleanup
-    │   ├── data/               # Test data generation
-    │   ├── hooks/              # Cucumber lifecycle hooks
-    │   ├── model/              # Request and response models
-    │   ├── specification/      # Shared Rest-Assured request setup
-    │   └── stepdefinitions/    # Cucumber step definitions
-    └── resources/
-        ├── features/           # Gherkin feature files
-        ├── schemas/            # JSON response schemas
-        ├── spec/               # OpenAPI specification
-        └── config.properties   # Default API configuration
+Configuration is in `src/test/resources/config.properties`:
+
+```properties
+base.url=https://automationintesting.online/api
 ```
 
-The framework code is in Maven's test source/resource directories and targets Java 17.
+The same file defines `auth.username` and `auth.password`; authentication steps always read both values from it. Credentials are not embedded in step definitions. The base URL can be overridden with the `base.url` JVM property:
 
-## Framework Features
-
-- API request execution and response validation using Rest-Assured.
-- BDD scenarios written in Gherkin and executed through Cucumber.
-- Validation of HTTP status codes, response bodies, fields, and JSON schemas.
-- Positive, negative, boundary, and invalid-input testing.
-- Reusable API testing logic and configuration management.
-- Externalized API base URL configuration with JVM system-property overrides.
-- Maven-based test execution.
-- Cucumber HTML, JSON, and XML reporting.
-- Allure test execution reporting.
-- GitHub Actions workflows for framework validation and automated API testing.
-
-## API Configuration
-
-The default API base URL is `https://automationintesting.online/api`, configured in `src/test/resources/config.properties`. The `base.url` JVM system property takes precedence over the properties file.
-
-Override the configured base URL for a test run:
-
-```bash
+```shell
 mvn verify -Dbase.url=https://your-api-host/api
 ```
 
-The authentication scenarios use the practice API's sample credentials. Do not use real or privileged credentials in source control.
+The checked-in credentials are the public practice API sample credentials. Do not place private or production credentials in this file.
 
-## Setup
+## Run Tests
 
-Install Java 17 and Maven 3.9 or later, then clone the repository:
+Run the Booking scenarios:
 
-```bash
-git clone https://github.com/nathiyam1202-sketch/API_Testing_Kata.git
-cd API_Testing_Kata
+```shell
+mvn test
 ```
 
-No separate application build or database setup is required. The default configuration targets the public practice API; use `-Dbase.url=...` to target another compatible environment.
+Run a clean build and test suite:
 
-## Running Tests
-
-Run all Cucumber scenarios against the configured API:
-
-```bash
-mvn verify
-```
-
-Run a selected set of tags (Cucumber tag expressions support `and`, `or`, `not`, and parentheses):
-
-```bash
-mvn verify '-Dcucumber.filter.tags=@authentication or @room or @message'
-```
-
-Run one feature area, exclude a tag, or validate step bindings without making API calls:
-
-```bash
-mvn verify '-Dcucumber.filter.tags=@booking'
-mvn verify '-Dcucumber.filter.tags=not @contact-form'
-mvn verify -Dcucumber.execution.dry-run=true
-```
-
-Combine the base URL and tag filter as needed:
-
-```bash
-mvn verify -Dbase.url=https://your-api-host/api '-Dcucumber.filter.tags=@room or @message'
-```
-
-Clean previous build artifacts and run the complete suite:
-
-```bash
+```shell
 mvn clean verify
 ```
 
-Apply the configured Google Java Format style or check formatting:
+Run only the Booking tag:
 
-```bash
+```shell
+mvn test '-Dcucumber.filter.tags=@booking'
+```
+
+Validate step bindings without making API requests:
+
+```shell
+mvn test -Dcucumber.execution.dry-run=true
+```
+
+Format Java sources or check the configured Google Java Format style:
+
+```shell
 mvn spotless:apply
 mvn spotless:check
 ```
 
-Generate and serve the Allure report after test execution:
+## Booking Coverage
 
-```bash
-mvn allure:serve
-```
+The Booking feature covers creation, retrieval, update, partial update, deletion, invalid and missing fields, malformed email, date rules, and protected operations with missing or invalid token fixtures. Each scenario authenticates in its shared setup.
 
-The complete suite includes write operations. Contact form submissions may persist on the external service, and remote endpoint behavior may differ from the documented API contract.
+The `expired` token case currently sends an invalid fixture token; it does not test time-based token expiration. Some booking read/mutation and cleanup operations have returned HTTP 500 from the public service. Live behavior depends on service availability and state.
 
-## Cucumber Tags
+Other API features and step definitions may remain in the repository, but the Cucumber runner and automated API CI job execute Booking only.
 
-Tags are declared at the feature level and select all scenarios in that feature:
+## Reports
 
-| Tag | Feature area | Notes |
-|---|---|---|
-| `@authentication` | Authentication | Requests an authentication token |
-| `@booking` | Bookings | Includes create/read/update/delete, validation, and authorization scenarios |
-| `@room` | Room listing | Reads the room list |
-| `@message` | Messages | Reads existing contact messages |
-| `@contact-form` | Contact form | Includes submissions that may persist on the external service |
+Cucumber writes reports to `target/`:
 
-The GitHub Actions API workflow currently selects `@authentication`, `@room`, and `@message`. Use the booking and contact-form tags deliberately: those scenarios include write requests, and booking mutations/cleanup have shown instability against the configured service.
-
-## Test Reports
-
-Maven writes test reports to the `target/` directory:
-
-| Report | Description |
+| File | Description |
 |---|---|
-| `cucumber-reports.html` | Cucumber HTML execution report |
+| `cucumber-reports.html` | Cucumber HTML report |
 | `cucumber.json` | Machine-readable Cucumber results |
 | `cucumber.xml` | Cucumber JUnit XML report |
-| `allure-results/` | Raw Allure execution results |
-| `site/allure-maven-plugin/` | Generated Allure report |
-| `surefire-reports/` | Maven Surefire test reports |
+| `surefire-reports/` | Maven/Surefire test results |
 
-## Continuous Integration
+## CI
 
-GitHub Actions runs on pushes, pull requests, and manual dispatch.
+GitHub Actions runs on pushes, pull requests, and manual dispatch:
 
-- `maven.yml` compiles the project and dry-runs Cucumber to validate feature-to-step bindings without external API requests.
-- `maven-api-tests.yml` runs `@authentication`, `@room`, and `@message` scenarios against the configured API.
-- Both workflows upload generated reports as workflow artifacts.
-- Contact-form submissions and booking mutation scenarios are excluded from the automated API workflow to avoid persistent submissions and remote mutation instability.
+- `maven.yml` compiles and dry-runs the Booking feature to validate step bindings without external API requests.
+- `maven-api-tests.yml` runs the `@booking` scenarios against the configured API.
+- Both workflows upload Cucumber and Surefire reports.
 
-Run the complete API suite locally with `mvn verify` when write scenarios are appropriate for the target environment.
+## Architecture
 
-## Testing Approach
-
-Current feature files cover:
-
-- Successful authentication, room listing, message listing, and booking creation.
-- Booking validation, including missing fields, malformed email values, and date rules.
-- Protected booking operations with missing, invalid, and fixture "expired" tokens.
-- Contact form validation for omitted fields and markup inputs.
-- HTTP status, response-field, error-message, and JSON-schema assertions.
-
-The token labeled `expired` is currently represented by a deliberately invalid test token; it does not verify time-based expiration by the server.
-
-## Known Limitations
-
-- CI's Cucumber dry-run verifies Java compilation and step bindings but does not execute API assertions.
-- The tagged API workflow makes live requests to the external practice service and may be affected by service availability or state.
-- Booking retrieval, update, and delete operations have returned HTTP 500 from the configured service in prior runs. Cleanup failures may leave remote booking test data behind.
-- Contact form and markup boundary scenarios have not been run against the live service because they may create persistent data and the service's expected sanitization behavior has not been confirmed.
-
-## Architecture Decisions
-
-| Decision | Implementation | Rationale |
-|---|---|---|
-| BDD test organization | Feature files describe behavior; Java step definitions call API clients and validations. | Keeps scenarios readable while allowing request and assertion code to be reused. |
-| API client boundary | Endpoint-specific clients wrap Rest-Assured calls and share a request specification. | Centralizes HTTP details and keeps step definitions focused on scenario intent. |
-| Request/response models | POJOs represent structured booking, authentication, and message data; maps are used where a test must omit fields. | Provides typed requests for normal flows while allowing precise malformed or incomplete payloads. |
-| Scenario isolation | `TestContext` stores scenario state in `ThreadLocal` maps and hooks initialize/clear it around each scenario. | Keeps scenario state isolated by execution thread and clears it after each scenario. |
-| Test data and cleanup | Booking data is generated uniquely; scenario cleanup actions are registered and run in reverse order. | Reduces collisions and provides a place to clean up test-created data. Remote cleanup can still fail if the service is unavailable. |
-| Shared assertions and schemas | Reusable response steps check status, fields, and error messages; named JSON schemas are loaded from test resources. | Keeps response contracts consistent and avoids duplicating assertions in features. |
-| Configuration precedence | `base.url` from a JVM system property overrides `config.properties`. | Supports local, CI, and alternate-environment execution without changing source files. |
-| Reporting and CI | Cucumber emits HTML/JSON/JUnit XML; the Allure adapter records scenario results; CI separates dry-run validation from selected live API tests. | Preserves readable and machine-readable reporting while limiting automated writes to the shared external service. |
+| Area | Design |
+|---|---|
+| BDD | `Booking.feature` describes behavior; `BookingSteps` binds scenarios to framework operations. |
+| HTTP | `BookingClient` encapsulates Booking endpoints and uses the shared Rest-Assured request specification. |
+| Models and data | POJOs represent requests/responses; `BookingRequestVariations` builds invalid/missing-field inputs; `BookingDataGenerator` creates unique valid requests. |
+| State and lifecycle | `TestContext` holds per-thread scenario data and cleanup actions; Cucumber hooks initialize, clean, and clear the context. |
+| Validation | Shared response steps validate status, error messages, fields, and named JSON schemas. |
+| Configuration | `ConfigReader` reads `config.properties`; the `base.url` system property can override the configured URL. |
+| Reporting | Cucumber generates HTML, JSON, and JUnit XML reports; Surefire exposes failures to Maven. |

@@ -12,10 +12,10 @@ import org.junit.platform.suite.api.Suite;
 @Suite
 @IncludeEngines("cucumber")
 @SelectPackages("com.booking")
-@SelectClasspathResource("features")
+@SelectClasspathResource("features/Booking.feature")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "com.booking")
 @ConfigurationParameter(
     key = PLUGIN_PROPERTY_NAME,
     value =
-        "pretty, html:target/cucumber-reports.html, json:target/cucumber.json, junit:target/cucumber.xml, io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm")
+        "pretty, html:target/cucumber-reports.html, json:target/cucumber.json, junit:target/cucumber.xml")
 public class TestRunner {}

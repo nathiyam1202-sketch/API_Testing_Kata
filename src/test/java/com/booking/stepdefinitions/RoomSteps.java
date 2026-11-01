@@ -1,8 +1,8 @@
 package com.booking.stepdefinitions;
 
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -29,6 +29,6 @@ public class RoomSteps {
         .then()
         .body("rooms.size()", greaterThan(0))
         .body("rooms.roomid", everyItem(notNullValue()))
-        .body("rooms.roomName", everyItem(not(isEmptyOrNullString())));
+        .body("rooms.roomName", everyItem(not(emptyOrNullString())));
   }
 }

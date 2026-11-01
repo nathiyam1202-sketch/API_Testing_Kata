@@ -1,6 +1,7 @@
 package com.booking.stepdefinitions;
 
 import com.booking.client.AuthClient;
+import com.booking.config.ConfigReader;
 import com.booking.context.TestContext;
 import com.booking.model.AuthRequest;
 import io.cucumber.java.en.Given;
@@ -12,7 +13,9 @@ public class AuthenticationSteps {
 
   @Given("I have valid authentication credentials")
   public void iHaveValidAuthenticationCredentials() {
-    TestContext.put(AUTH_REQUEST_CONTEXT_KEY, new AuthRequest("admin", "password"));
+    TestContext.put(
+        AUTH_REQUEST_CONTEXT_KEY,
+        new AuthRequest(ConfigReader.getAuthUsername(), ConfigReader.getAuthPassword()));
   }
 
   @When("I request an authentication token")

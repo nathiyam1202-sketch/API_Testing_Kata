@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   api-tests:
-    name: Run read-only API scenarios
+    name: Run booking API scenarios
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -29,10 +29,10 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Run authentication, room, and message scenarios
+      - name: Run booking scenarios
         run: >-
           mvn --batch-mode --no-transfer-progress verify
-          '-Dcucumber.filter.tags=@authentication or @room or @message'
+          '-Dcucumber.filter.tags=@booking'
 
       - name: Upload API test reports
         if: always()
@@ -43,8 +43,6 @@ jobs:
             target/cucumber-reports.html
             target/cucumber.json
             target/cucumber.xml
-            target/allure-results/
-            target/site/allure-maven-plugin/
             target/surefire-reports/
           if-no-files-found: warn
           retention-days: 14

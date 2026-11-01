@@ -1,9 +1,9 @@
 package com.booking.stepdefinitions;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -31,8 +31,8 @@ public class GetMessages {
         .then()
         .body("messages.size()", greaterThan(0))
         .body("messages.id", everyItem(notNullValue()))
-        .body("messages.name", everyItem(not(isEmptyOrNullString())))
-        .body("messages.subject", everyItem(not(isEmptyOrNullString())))
+        .body("messages.name", everyItem(not(emptyOrNullString())))
+        .body("messages.subject", everyItem(not(emptyOrNullString())))
         .body("messages.read", everyItem(notNullValue()))
         .log()
         .all();
