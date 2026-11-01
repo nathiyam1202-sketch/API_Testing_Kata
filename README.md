@@ -2,6 +2,23 @@
 
 API Testing and Java Exercise: Setting up a Basic API Test Automation Framework.
 
+## Project Structure
+
+```text
+src/
+  main/
+    java/                 # Application and reusable framework code
+    resources/            # Runtime resources
+  test/
+    java/com/booking/     # Cucumber runner, configuration, and step definitions
+    resources/
+      features/           # Cucumber feature files
+      spec/               # API specifications
+      config.properties   # Test configuration
+```
+
+The project targets Java 17 and uses Maven's standard source and resource directories.
+
 ## Objective
 The objective of this exercise is to evaluate your knowledge on API testing and Java by setting up a basic API Test Automation framework using Rest-Assured and Cucumber. You will need to create a test suite that executes a few tests against one endpoint of a hotel booking website and evaluates their responses.
 

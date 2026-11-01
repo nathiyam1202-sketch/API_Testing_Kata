@@ -7,20 +7,32 @@ import java.util.Properties;
 public final class ConfigReader {
     private static final String CONFIG_FILE = "/config.properties";
     private static final String BASE_URL_KEY = "base.url";
-    private static final String BASE_URL;
-
-    static {
-        BASE_URL = loadBaseUrl();
-    }
+    private static final Properties PROPERTIES = loadProperties();
 
     private ConfigReader() {
     }
 
     public static String getBaseUrl() {
-        return BASE_URL;
+        return getProperty(BASE_URL_KEY).replaceAll("/+$", "");
     }
 
-    private static String loadBaseUrl() {
+    public static String getProperty(String key) {
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("Configuration property key must not be blank");
+        }
+
+        String value = System.getProperty(key);
+        if (value == null || value.isBlank()) {
+            value = PROPERTIES.getProperty(key);
+        }
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException("Missing required configuration property: " + key);
+        }
+
+        return value.trim();
+    }
+
+    private static Properties loadProperties() {
         Properties properties = new Properties();
         try (InputStream input = ConfigReader.class.getResourceAsStream(CONFIG_FILE)) {
             if (input == null) {
@@ -31,14 +43,6 @@ public final class ConfigReader {
             throw new IllegalStateException("Unable to read configuration file: " + CONFIG_FILE, e);
         }
 
-        String baseUrl = System.getProperty(BASE_URL_KEY);
-        if (baseUrl == null || baseUrl.isBlank()) {
-            baseUrl = properties.getProperty(BASE_URL_KEY);
-        }
-        if (baseUrl == null || baseUrl.isBlank()) {
-            throw new IllegalStateException("Missing required configuration property: " + BASE_URL_KEY);
-        }
-
-        return baseUrl.trim().replaceAll("/+$", "");
+        return properties;
     }
 }
