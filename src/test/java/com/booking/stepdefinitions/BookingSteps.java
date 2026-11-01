@@ -3,6 +3,7 @@ package com.booking.stepdefinitions;
 import com.booking.client.AuthClient;
 import com.booking.client.BookingClient;
 import com.booking.context.TestContext;
+import com.booking.data.BookingDataGenerator;
 import com.booking.model.AuthRequest;
 import com.booking.model.BookingDates;
 import com.booking.model.BookingRequest;
@@ -11,7 +12,6 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 
-import java.time.LocalDate;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -36,47 +36,62 @@ public class BookingSteps {
 
     @Given("I have a valid booking request")
     public void iHaveAValidBookingRequest() {
-        LocalDate checkin = LocalDate.now().plusDays(1);
-        BookingRequest bookingRequest = new BookingRequest(
-                2,
-                "TestGuest",
-                "BookingGuest",
-                true,
-                new BookingDates(checkin.toString(), checkin.plusDays(1).toString()),
-                "test@example.com",
-                "12345678901"
-        );
-        TestContext.put(BOOKING_REQUEST_CONTEXT_KEY, bookingRequest);
+        TestContext.put(BOOKING_REQUEST_CONTEXT_KEY, BookingDataGenerator.generateBookingRequest());
     }
 
     @When("I create a booking")
     public void iCreateABooking() {
         BookingRequest bookingRequest = getBookingRequest();
         Response response = bookingClient.createBooking(bookingRequest);
+        registerBookingCleanup(response);
         TestContext.put(BOOKING_RESPONSE_CONTEXT_KEY, response);
+        TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
     }
 
     @Then("the booking should be created successfully")
     public void theBookingShouldBeCreatedSuccessfully() {
         Response response = getBookingResponse();
         response.then()
-                .statusCode(200)
                 .body("bookingid", greaterThan(0))
-                .body("booking.firstname", equalTo(getBookingRequest().getFirstname()))
-                .body("booking.lastname", equalTo(getBookingRequest().getLastname()));
+                .body("firstname", equalTo(getBookingRequest().getFirstname()))
+                .body("lastname", equalTo(getBookingRequest().getLastname()));
+    }
+
+    @Given("I have a booking request with invalid {string}")
+    public void iHaveABookingRequestWithInvalidField(String field) {
+        BookingRequest bookingRequest = BookingDataGenerator.generateBookingRequest();
+
+        switch (field) {
+            case "firstname" -> bookingRequest.setFirstname("Jo");
+            case "lastname" -> bookingRequest.setLastname("D");
+            case "email" -> bookingRequest.setEmail("invalid-email");
+            case "phone" -> bookingRequest.setPhone("123");
+            case "dates" -> bookingRequest.setBookingdates(
+                    new BookingDates(
+                            bookingRequest.getBookingdates().getCheckout(),
+                            bookingRequest.getBookingdates().getCheckin()
+                    )
+            );
+            default -> throw new IllegalArgumentException("Unsupported invalid booking field: " + field);
+        }
+
+        TestContext.put(BOOKING_REQUEST_CONTEXT_KEY, bookingRequest);
     }
 
     @Given("a booking exists")
     public void aBookingExists() {
         Response response = bookingClient.createBooking(getBookingRequest());
-        response.then().statusCode(200).body("bookingid", greaterThan(0));
+        registerBookingCleanup(response);
+        response.then().statusCode(201).body("bookingid", greaterThan(0));
         TestContext.put(BOOKING_ID_CONTEXT_KEY, response.jsonPath().getInt("bookingid"));
+        TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
     }
 
     @When("I retrieve the booking")
     public void iRetrieveTheBooking() {
         Response response = bookingClient.getBooking(getBookingId(), getToken());
         TestContext.put(BOOKING_RESPONSE_CONTEXT_KEY, response);
+        TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
     }
 
     @Then("the booking details should match the created booking")
@@ -84,10 +99,8 @@ public class BookingSteps {
         Response response = getBookingResponse();
         BookingRequest bookingRequest = getBookingRequest();
         response.then()
-                .statusCode(200)
                 .body("firstname", equalTo(bookingRequest.getFirstname()))
-                .body("lastname", equalTo(bookingRequest.getLastname()))
-                .body("email", equalTo(bookingRequest.getEmail()));
+                .body("lastname", equalTo(bookingRequest.getLastname()));
     }
 
     @When("I update the booking")
@@ -104,13 +117,13 @@ public class BookingSteps {
         );
         Response response = bookingClient.updateBooking(getBookingId(), updated, getToken());
         TestContext.put(BOOKING_RESPONSE_CONTEXT_KEY, response);
+        TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
         TestContext.put(UPDATED_FIRST_NAME_CONTEXT_KEY, updated.getFirstname());
     }
 
     @Then("the updated booking should be returned")
     public void theUpdatedBookingShouldBeReturned() {
         getBookingResponse().then()
-                .statusCode(200)
                 .body("firstname", equalTo(TestContext.get(UPDATED_FIRST_NAME_CONTEXT_KEY, String.class)));
     }
 
@@ -123,13 +136,13 @@ public class BookingSteps {
                 getToken()
         );
         TestContext.put(BOOKING_RESPONSE_CONTEXT_KEY, response);
+        TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
         TestContext.put(UPDATED_FIRST_NAME_CONTEXT_KEY, updatedFirstName);
     }
 
     @Then("the partial update should be returned")
     public void thePartialUpdateShouldBeReturned() {
         getBookingResponse().then()
-                .statusCode(200)
                 .body("firstname", equalTo(TestContext.get(UPDATED_FIRST_NAME_CONTEXT_KEY, String.class)));
     }
 
@@ -137,11 +150,31 @@ public class BookingSteps {
     public void iDeleteTheBooking() {
         Response response = bookingClient.deleteBooking(getBookingId(), getToken());
         TestContext.put(BOOKING_RESPONSE_CONTEXT_KEY, response);
+        TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
     }
 
-    @Then("the booking should be deleted successfully")
-    public void theBookingShouldBeDeletedSuccessfully() {
-        getBookingResponse().then().statusCode(201);
+    private void registerBookingCleanup(Response response) {
+        if (response.statusCode() != 201) {
+            return;
+        }
+
+        int bookingId = response.jsonPath().getInt("bookingid");
+        if (bookingId <= 0) {
+            throw new IllegalStateException("Booking creation succeeded without a valid booking ID");
+        }
+
+        String token = getToken();
+        TestContext.registerCleanupAction(cleanupKeyForBooking(bookingId), () -> {
+            if (getBookingResponse().statusCode() == 201) {
+                return;
+            }
+            Response cleanupResponse = bookingClient.deleteBooking(bookingId, token);
+            cleanupResponse.then().statusCode(201);
+        });
+    }
+
+    private String cleanupKeyForBooking(int bookingId) {
+        return "booking:" + bookingId;
     }
 
     private BookingRequest getBookingRequest() {

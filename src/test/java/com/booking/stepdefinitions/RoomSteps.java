@@ -17,14 +17,15 @@ public class RoomSteps {
 
     @When("I request the room list")
     public void iRequestTheRoomList() {
-        TestContext.put(ROOM_RESPONSE_CONTEXT_KEY, new RoomClient().getRooms());
+        Response response = new RoomClient().getRooms();
+        TestContext.put(ROOM_RESPONSE_CONTEXT_KEY, response);
+        TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
     }
 
     @Then("I should receive the available rooms")
     public void iShouldReceiveTheAvailableRooms() {
         Response response = TestContext.get(ROOM_RESPONSE_CONTEXT_KEY, Response.class);
         response.then()
-                .statusCode(200)
                 .body("rooms.size()", greaterThan(0))
                 .body("rooms.roomid", everyItem(notNullValue()))
                 .body("rooms.roomName", everyItem(not(isEmptyOrNullString())));

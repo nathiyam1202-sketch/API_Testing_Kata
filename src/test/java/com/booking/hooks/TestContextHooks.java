@@ -11,7 +11,11 @@ public class TestContextHooks {
     }
 
     @After
-    public void clearScenarioContext() {
-        TestContext.clear();
+    public void cleanupScenario() {
+        try {
+            TestContext.runCleanupActions();
+        } finally {
+            TestContext.clear();
+        }
     }
 }

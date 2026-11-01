@@ -19,13 +19,13 @@ public class GetMessages {
                         .when()
                         .get(ConfigReader.getBaseUrl() + "/message");
         TestContext.put(RESPONSE_CONTEXT_KEY, response);
+        TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
     }
 
     @Then("I should receive all existing messages")
     public void iShouldReceiveAllExistingMessages() {
         Response response = TestContext.get(RESPONSE_CONTEXT_KEY, Response.class);
-        response.then().statusCode(200)
-                .body("messages.size()", greaterThan(0))
+        response.then().body("messages.size()", greaterThan(0))
                 .body("messages.id", everyItem(notNullValue()))
                 .body("messages.name", everyItem(not(isEmptyOrNullString())))
                 .body("messages.subject", everyItem(not(isEmptyOrNullString())))

@@ -1,5 +1,8 @@
 package com.booking.data;
 
+import com.booking.model.BookingDates;
+import com.booking.model.BookingRequest;
+
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -11,20 +14,35 @@ public final class BookingDataGenerator {
     }
 
     public static Map<String, Object> generateBooking() {
-        LocalDate checkin = LocalDate.now().plusDays(1);
-        Map<String, String> bookingDates = new LinkedHashMap<>();
-        bookingDates.put("checkin", checkin.toString());
-        bookingDates.put("checkout", checkin.plusDays(1).toString());
+        BookingRequest request = generateBookingRequest();
 
         Map<String, Object> booking = new LinkedHashMap<>();
-        booking.put("roomid", 2);
-        booking.put("firstname", "Test" + randomLetters(8));
-        booking.put("lastname", "Guest" + randomLetters(8));
-        booking.put("depositpaid", true);
-        booking.put("bookingdates", bookingDates);
-        booking.put("email", "test+" + UUID.randomUUID() + "@example.com");
-        booking.put("phone", "1" + randomDigits(10));
+        booking.put("roomid", request.getRoomid());
+        booking.put("firstname", request.getFirstname());
+        booking.put("lastname", request.getLastname());
+        booking.put("depositpaid", request.isDepositpaid());
+        booking.put("bookingdates", Map.of(
+                "checkin", request.getBookingdates().getCheckin(),
+                "checkout", request.getBookingdates().getCheckout()
+        ));
+        booking.put("email", request.getEmail());
+        booking.put("phone", request.getPhone());
         return booking;
+    }
+
+    public static BookingRequest generateBookingRequest() {
+        LocalDate checkin = LocalDate.now().plusDays(
+                ThreadLocalRandom.current().nextInt(365, 3650)
+        );
+        return new BookingRequest(
+                2,
+                "Test" + randomLetters(8),
+                "Guest" + randomLetters(8),
+                true,
+                new BookingDates(checkin.toString(), checkin.plusDays(1).toString()),
+                "test+" + UUID.randomUUID() + "@example.com",
+                "1" + randomDigits(10)
+        );
     }
 
     private static String randomLetters(int length) {

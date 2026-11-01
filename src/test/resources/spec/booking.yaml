@@ -75,7 +75,7 @@ paths:
             schema:
               $ref: '#/components/schemas/Booking'
       responses:
-        '200':
+        '201':
           description: Booking successfully created
           content:
             application/json:
@@ -85,8 +85,20 @@ paths:
                   bookingid:
                     type: integer
                     example: 10
-                  booking:
-                    $ref: '#/components/schemas/Booking'
+                  roomid:
+                    type: integer
+                    example: 2
+                  firstname:
+                    type: string
+                    example: John
+                  lastname:
+                    type: string
+                    example: Doe
+                  depositpaid:
+                    type: boolean
+                    example: true
+                  bookingdates:
+                    $ref: '#/components/schemas/BookingDates'
         '400':
           description: Validation error when creating a booking
           content:
@@ -108,7 +120,7 @@ paths:
                   summary: Lastname validation
                   value:
                     errors:
-                      - "size must be between 3 and 18"
+                      - "size must be between 3 and 30"
                 phone_invalid:
                   summary: Phone number validation
                   value:
@@ -119,6 +131,18 @@ paths:
                   value:
                     errors:
                       - "must be a well-formed email address"
+        '409':
+          description: Booking conflicts with the requested room or dates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: string
+              examples:
                 invalid_dates:
                   summary: Checkout before checkin
                   value:
@@ -147,7 +171,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Booking'
+                $ref: '#/components/schemas/BookingResponse'
         '401':
           description: Unauthorized, missing or invalid token
           content:
@@ -186,7 +210,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Booking'
+                $ref: '#/components/schemas/BookingResponse'
         '401':
           description: Unauthorized, missing or invalid token
           content:
@@ -232,7 +256,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Booking'
+                $ref: '#/components/schemas/BookingResponse'
         '401':
           description: Unauthorized, missing or invalid token
           content:
@@ -309,3 +333,36 @@ components:
         phone:
           type: string
           example: "1234567890"
+
+    BookingDates:
+      type: object
+      required: [checkin, checkout]
+      properties:
+        checkin:
+          type: string
+          format: date
+        checkout:
+          type: string
+          format: date
+
+    BookingResponse:
+      type: object
+      required: [roomid, firstname, lastname, depositpaid, bookingdates]
+      properties:
+        bookingid:
+          type: integer
+          example: 10
+        roomid:
+          type: integer
+          example: 2
+        firstname:
+          type: string
+          example: John
+        lastname:
+          type: string
+          example: Doe
+        depositpaid:
+          type: boolean
+          example: true
+        bookingdates:
+          $ref: '#/components/schemas/BookingDates'
