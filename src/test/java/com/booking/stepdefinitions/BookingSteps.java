@@ -12,6 +12,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import io.restassured.response.Response;
 
+import java.time.LocalDate;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -41,8 +42,64 @@ public class BookingSteps {
 
     @When("I create a booking")
     public void iCreateABooking() {
-        BookingRequest bookingRequest = getBookingRequest();
-        Response response = bookingClient.createBooking(bookingRequest);
+        storeBookingCreationResponse(bookingClient.createBooking(getBookingRequest()));
+    }
+
+    @When("I create a booking with a missing {string} field")
+    public void iCreateABookingWithAMissingField(String field) {
+        Map<String, Object> bookingPayload = BookingDataGenerator.generateBooking();
+        if (field.startsWith("bookingdates.")) {
+            Object value = bookingPayload.get("bookingdates");
+            if (!(value instanceof Map<?, ?> existingDates)) {
+                throw new IllegalStateException("Generated booking payload has no bookingdates object");
+            }
+
+            Map<String, Object> bookingDates = new java.util.LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : existingDates.entrySet()) {
+                if (!(entry.getKey() instanceof String key)) {
+                    throw new IllegalStateException("Booking date field names must be strings");
+                }
+                bookingDates.put(key, entry.getValue());
+            }
+            String dateField = field.substring("bookingdates.".length());
+            if (!bookingDates.containsKey(dateField)) {
+                throw new IllegalArgumentException("Unsupported missing booking field: " + field);
+            }
+            bookingDates.remove(dateField);
+            bookingPayload.put("bookingdates", bookingDates);
+        } else if (bookingPayload.containsKey(field)) {
+            bookingPayload.remove(field);
+        } else {
+            throw new IllegalArgumentException("Unsupported missing booking field: " + field);
+        }
+
+        storeBookingCreationResponse(bookingClient.createBooking(bookingPayload));
+    }
+
+    @Given("I have a booking request with malformed email {string}")
+    public void iHaveABookingRequestWithMalformedEmail(String email) {
+        BookingRequest bookingRequest = BookingDataGenerator.generateBookingRequest();
+        bookingRequest.setEmail(email);
+        TestContext.put(BOOKING_REQUEST_CONTEXT_KEY, bookingRequest);
+    }
+
+    @Given("I have a booking request violating date rule {string}")
+    public void iHaveABookingRequestViolatingDateRule(String dateRule) {
+        BookingRequest bookingRequest = BookingDataGenerator.generateBookingRequest();
+        LocalDate checkin = LocalDate.parse(bookingRequest.getBookingdates().getCheckin());
+        LocalDate checkout = LocalDate.parse(bookingRequest.getBookingdates().getCheckout());
+
+        switch (dateRule) {
+            case "checkout_before_checkin" -> checkout = checkin.minusDays(1);
+            case "checkout_same_as_checkin" -> checkout = checkin;
+            default -> throw new IllegalArgumentException("Unsupported booking date rule: " + dateRule);
+        }
+
+        bookingRequest.setBookingdates(new BookingDates(checkin.toString(), checkout.toString()));
+        TestContext.put(BOOKING_REQUEST_CONTEXT_KEY, bookingRequest);
+    }
+
+    private void storeBookingCreationResponse(Response response) {
         registerBookingCleanup(response);
         TestContext.put(BOOKING_RESPONSE_CONTEXT_KEY, response);
         TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
@@ -64,14 +121,7 @@ public class BookingSteps {
         switch (field) {
             case "firstname" -> bookingRequest.setFirstname("Jo");
             case "lastname" -> bookingRequest.setLastname("D");
-            case "email" -> bookingRequest.setEmail("invalid-email");
             case "phone" -> bookingRequest.setPhone("123");
-            case "dates" -> bookingRequest.setBookingdates(
-                    new BookingDates(
-                            bookingRequest.getBookingdates().getCheckout(),
-                            bookingRequest.getBookingdates().getCheckin()
-                    )
-            );
             default -> throw new IllegalArgumentException("Unsupported invalid booking field: " + field);
         }
 
@@ -90,6 +140,31 @@ public class BookingSteps {
     @When("I retrieve the booking")
     public void iRetrieveTheBooking() {
         Response response = bookingClient.getBooking(getBookingId(), getToken());
+        TestContext.put(BOOKING_RESPONSE_CONTEXT_KEY, response);
+        TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
+    }
+
+    @When("I call the protected booking endpoint {string} with a {string} token")
+    public void iCallTheProtectedBookingEndpointWithAToken(String operation, String tokenState) {
+        String token = switch (tokenState) {
+            case "missing" -> null;
+            case "expired" -> "expired-test-token";
+            case "invalid" -> "invalid-test-token";
+            default -> throw new IllegalArgumentException("Unsupported token state: " + tokenState);
+        };
+
+        Response response = switch (operation) {
+            case "retrieve" -> bookingClient.getBooking(getBookingId(), token);
+            case "update" -> bookingClient.updateBooking(getBookingId(), getBookingRequest(), token);
+            case "partially update" -> bookingClient.patchBooking(
+                    getBookingId(),
+                    Map.of("firstname", "UnauthorizedUpdate"),
+                    token
+            );
+            case "delete" -> bookingClient.deleteBooking(getBookingId(), token);
+            default -> throw new IllegalArgumentException("Unsupported protected booking operation: " + operation);
+        };
+
         TestContext.put(BOOKING_RESPONSE_CONTEXT_KEY, response);
         TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
     }

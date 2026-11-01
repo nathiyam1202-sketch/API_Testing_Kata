@@ -43,6 +43,19 @@ public class ApiResponseSteps {
         }
     }
 
+    @Then("the API response should contain a validation error")
+    public void theApiResponseShouldContainAValidationError() {
+        Response response = getApiResponse();
+        List<String> actualMessages = new ArrayList<>();
+        collectMessages(response.jsonPath().get("error"), actualMessages);
+        collectMessages(response.jsonPath().get("errors"), actualMessages);
+        collectMessages(response.jsonPath().get("message"), actualMessages);
+
+        if (actualMessages.isEmpty()) {
+            throw new AssertionError("Expected a validation error message in the API response");
+        }
+    }
+
     @Then("the API response field {string} should equal {string}")
     public void theApiResponseFieldShouldEqual(String jsonPath, String expectedValue) {
         Object actualValue = getApiResponse().jsonPath().get(jsonPath);
