@@ -62,8 +62,6 @@ The Booking feature covers creation, retrieval, update, partial update, deletion
 
 The `expired` token case currently sends an invalid fixture token; it does not test time-based token expiration. Some booking read/mutation and cleanup operations have returned HTTP 500 from the public service. Live behavior depends on service availability and state.
 
-Other API features and step definitions may remain in the repository, but the Cucumber runner and automated API CI job execute Booking only.
-
 ## Reports
 
 Cucumber writes reports to `target/`:
