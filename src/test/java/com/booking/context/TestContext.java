@@ -1,13 +1,13 @@
 package com.booking.context;
 
+import com.booking.model.BookingRequest;
+import io.restassured.response.Response;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public final class TestContext {
-  public static final String API_RESPONSE_CONTEXT_KEY = "api.response";
   private static final ThreadLocal<ScenarioState> SCENARIO_STATE = new ThreadLocal<>();
 
   private TestContext() {}
@@ -16,26 +16,51 @@ public final class TestContext {
     SCENARIO_STATE.set(new ScenarioState());
   }
 
-  public static void put(String key, Object value) {
-    validateKey(key);
-    if (value == null) {
-      throw new IllegalArgumentException("Context value must not be null");
-    }
-
-    scenarioState().data.put(key, value);
+  public static void setBookingRequest(BookingRequest bookingRequest) {
+    scenarioState().bookingRequest = requireValue(bookingRequest, "Booking request");
   }
 
-  public static <T> T get(String key, Class<T> valueType) {
-    validateKey(key);
-    if (valueType == null) {
-      throw new IllegalArgumentException("Context value type must not be null");
-    }
+  public static BookingRequest bookingRequest() {
+    return requireValue(scenarioState().bookingRequest, "Booking request");
+  }
 
-    Object value = scenarioState().data.get(key);
-    if (value == null) {
-      throw new IllegalStateException("No scenario context value found for key: " + key);
+  public static void setBookingId(int bookingId) {
+    if (bookingId <= 0) {
+      throw new IllegalArgumentException("Booking ID must be positive");
     }
-    return valueType.cast(value);
+    scenarioState().bookingId = bookingId;
+  }
+
+  public static int bookingId() {
+    int bookingId = scenarioState().bookingId;
+    if (bookingId <= 0) {
+      throw new IllegalStateException("No booking ID is available in the current scenario");
+    }
+    return bookingId;
+  }
+
+  public static void setToken(String token) {
+    scenarioState().token = requireValue(token, "Authentication token");
+  }
+
+  public static String token() {
+    return requireValue(scenarioState().token, "Authentication token");
+  }
+
+  public static void setUpdatedFirstName(String firstName) {
+    scenarioState().updatedFirstName = requireValue(firstName, "Updated booking first name");
+  }
+
+  public static String updatedFirstName() {
+    return requireValue(scenarioState().updatedFirstName, "Updated booking first name");
+  }
+
+  public static void setLatestResponse(Response response) {
+    scenarioState().latestResponse = requireValue(response, "API response");
+  }
+
+  public static Response latestResponse() {
+    return requireValue(scenarioState().latestResponse, "API response");
   }
 
   public static void registerCleanupAction(String key, Runnable action) {
@@ -91,6 +116,13 @@ public final class TestContext {
     return state;
   }
 
+  private static <T> T requireValue(T value, String description) {
+    if (value == null) {
+      throw new IllegalStateException(description + " is not available in the current scenario");
+    }
+    return value;
+  }
+
   private static void validateKey(String key) {
     if (key == null || key.isBlank()) {
       throw new IllegalArgumentException("Context key must not be blank");
@@ -98,7 +130,11 @@ public final class TestContext {
   }
 
   private static final class ScenarioState {
-    private final Map<String, Object> data = new HashMap<>();
+    private BookingRequest bookingRequest;
+    private int bookingId;
+    private String token;
+    private String updatedFirstName;
+    private Response latestResponse;
     private final Map<String, Runnable> cleanupActions = new LinkedHashMap<>();
   }
 }

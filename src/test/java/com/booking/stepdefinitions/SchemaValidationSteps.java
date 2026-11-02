@@ -20,7 +20,7 @@ public class SchemaValidationSteps {
       throw new IllegalArgumentException("Unsupported JSON schema name: " + schemaName);
     }
 
-    Response response = TestContext.get(TestContext.API_RESPONSE_CONTEXT_KEY, Response.class);
+    Response response = TestContext.latestResponse();
     response.then().body(matchesJsonSchemaInClasspath(schemaPath));
   }
 }

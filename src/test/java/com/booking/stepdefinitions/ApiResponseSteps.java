@@ -78,7 +78,7 @@ public class ApiResponseSteps {
   }
 
   private Response getApiResponse() {
-    return TestContext.get(TestContext.API_RESPONSE_CONTEXT_KEY, Response.class);
+    return TestContext.latestResponse();
   }
 
   private void collectMessages(Object value, List<String> messages) {

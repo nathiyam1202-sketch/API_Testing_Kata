@@ -29,10 +29,12 @@ jobs:
           java-version: '17'
           cache: maven
 
-      - name: Run booking scenarios
-        run: >-
-          mvn --batch-mode --no-transfer-progress verify
-          '-Dcucumber.filter.tags=@booking'
+      - name: Run Booking scenarios
+        env:
+          BASE_URL: https://automationintesting.online/api
+          AUTH_USERNAME: ${{ secrets.BOOKING_API_USERNAME }}
+          AUTH_PASSWORD: ${{ secrets.BOOKING_API_PASSWORD }}
+        run: mvn --batch-mode --no-transfer-progress verify '-Dcucumber.filter.tags=@booking'
 
       - name: Upload API test reports
         if: always()

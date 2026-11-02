@@ -1,6 +1,6 @@
 # Booking API Testing Framework
 
-A Java 17 test framework for the Booking API, using Rest-Assured for HTTP interactions, Cucumber/Gherkin for behavior scenarios, and Maven for builds and execution. The automated Cucumber runner is scoped to the Booking feature.
+A Java 17 test framework for the Booking API, using Rest-Assured for HTTP interactions, Cucumber/Gherkin for behavior scenarios, and Maven for builds and execution. The automated Cucumber runner discovers all feature files in `src/test/resources/features`.
 
 ## Requirements
 
@@ -9,19 +9,21 @@ A Java 17 test framework for the Booking API, using Rest-Assured for HTTP intera
 
 ## Configuration
 
-Configuration is in `src/test/resources/config.properties`:
+Copy `src/test/resources/config.properties.example` to `src/test/resources/config.properties` and set the Booking API credentials:
 
 ```properties
 base.url=https://automationintesting.online/api
+auth.username=replace-with-configured-username
+auth.password=replace-with-configured-password
 ```
 
-The same file defines `auth.username` and `auth.password`; authentication steps always read both values from it. Credentials are not embedded in step definitions. The base URL can be overridden with the `base.url` JVM property:
+The local `config.properties` file is ignored by Git. Authentication reads credentials through `ConfigReader`; they are not embedded in step definitions. Values can also be supplied as environment variables (`BASE_URL`, `AUTH_USERNAME`, `AUTH_PASSWORD`) or JVM properties, which take precedence over the local file. Missing or blank required values produce an actionable configuration error.
 
 ```shell
 mvn verify -Dbase.url=https://your-api-host/api
 ```
 
-The checked-in credentials are the public practice API sample credentials. Do not place private or production credentials in this file.
+For GitHub Actions, configure `BOOKING_API_USERNAME` and `BOOKING_API_PASSWORD` as repository or environment secrets. CI passes them as environment variables and does not print them or place them on the Maven command line. Never commit real or production credentials.
 
 ## Run Tests
 
@@ -58,9 +60,9 @@ mvn spotless:check
 
 ## Booking Coverage
 
-The Booking feature covers creation, retrieval, update, partial update, deletion, invalid and missing fields, malformed email, date rules, and protected operations with missing or invalid token fixtures. Each scenario authenticates in its shared setup.
+Booking scenarios are split by endpoint operation: `BookingCollection.feature` covers `POST /booking`; `BookingGet.feature`, `BookingUpdate.feature`, `BookingPartialUpdate.feature`, and `BookingDelete.feature` cover the respective `GET`, `PUT`, `PATCH`, and `DELETE /booking/{id}` operations. Creation tests cover every required field from the Booking schema, malformed emails, validation boundaries, and invalid date ordering. Protected endpoint tests cover missing and invalid tokens as described by the API specification.
 
-The `expired` token case currently sends an invalid fixture token; it does not test time-based token expiration. Some booking read/mutation and cleanup operations have returned HTTP 500 from the public service. Live behavior depends on service availability and state.
+The API specification does not define a separate expired-token behavior, so the suite does not label an invalid fixture as an expired token. Some booking read/mutation and cleanup operations have returned HTTP 500 from the public service. Live behavior depends on service availability and state.
 
 ## Reports
 
@@ -85,10 +87,10 @@ GitHub Actions runs on pushes, pull requests, and manual dispatch:
 
 | Area | Design |
 |---|---|
-| BDD | `Booking.feature` describes behavior; `BookingSteps` binds scenarios to framework operations. |
+| BDD | Endpoint-focused Booking feature files cover collection creation and each `/booking/{id}` operation. `BookingSteps` binds scenarios to framework operations. |
 | HTTP | `BookingClient` encapsulates Booking endpoints and uses the shared Rest-Assured request specification. |
 | Models and data | POJOs represent requests/responses; `BookingRequestVariations` builds invalid/missing-field inputs; `BookingDataGenerator` creates unique valid requests. |
 | State and lifecycle | `TestContext` holds per-thread scenario data and cleanup actions; Cucumber hooks initialize, clean, and clear the context. |
 | Validation | Shared response steps validate status, error messages, fields, and named JSON schemas. |
-| Configuration | `ConfigReader` reads `config.properties`; the `base.url` system property can override the configured URL. |
+| Configuration | `ConfigReader` resolves values from JVM properties, environment variables, then the ignored local `config.properties` file. |
 | Reporting | Cucumber generates HTML, JSON, and JUnit XML reports; Surefire exposes failures to Maven. |

@@ -20,11 +20,6 @@ import io.restassured.response.Response;
 import java.util.Map;
 
 public class BookingSteps {
-  private static final String BOOKING_REQUEST_CONTEXT_KEY = "booking.request";
-  private static final String BOOKING_ID_CONTEXT_KEY = "booking.id";
-  private static final String BOOKING_RESPONSE_CONTEXT_KEY = "booking.response";
-  private static final String TOKEN_CONTEXT_KEY = "authentication.token";
-  private static final String UPDATED_FIRST_NAME_CONTEXT_KEY = "booking.updatedFirstName";
   private final BookingClient bookingClient = new BookingClient();
 
   @Given("I am authenticated")
@@ -33,12 +28,12 @@ public class BookingSteps {
         new AuthRequest(ConfigReader.getAuthUsername(), ConfigReader.getAuthPassword());
     Response response = new AuthClient().login(credentials);
     response.then().statusCode(200).body("token", not(emptyOrNullString()));
-    TestContext.put(TOKEN_CONTEXT_KEY, response.jsonPath().getString("token"));
+    TestContext.setToken(response.jsonPath().getString("token"));
   }
 
   @Given("I have a valid booking request")
   public void iHaveAValidBookingRequest() {
-    TestContext.put(BOOKING_REQUEST_CONTEXT_KEY, BookingDataGenerator.generateBookingRequest());
+    TestContext.setBookingRequest(BookingDataGenerator.generateBookingRequest());
   }
 
   @When("I create a booking")
@@ -54,19 +49,17 @@ public class BookingSteps {
 
   @Given("I have a booking request with malformed email {string}")
   public void iHaveABookingRequestWithMalformedEmail(String email) {
-    TestContext.put(
-        BOOKING_REQUEST_CONTEXT_KEY, BookingRequestVariations.withMalformedEmail(email));
+    TestContext.setBookingRequest(BookingRequestVariations.withMalformedEmail(email));
   }
 
   @Given("I have a booking request violating date rule {string}")
   public void iHaveABookingRequestViolatingDateRule(String dateRule) {
-    TestContext.put(
-        BOOKING_REQUEST_CONTEXT_KEY, BookingRequestVariations.violatingDateRule(dateRule));
+    TestContext.setBookingRequest(BookingRequestVariations.violatingDateRule(dateRule));
   }
 
   @Given("I have a booking request with invalid {string}")
   public void iHaveABookingRequestWithInvalidField(String field) {
-    TestContext.put(BOOKING_REQUEST_CONTEXT_KEY, BookingRequestVariations.withInvalidField(field));
+    TestContext.setBookingRequest(BookingRequestVariations.withInvalidField(field));
   }
 
   @Then("the booking should be created successfully")
@@ -83,7 +76,7 @@ public class BookingSteps {
     Response response = bookingClient.createBooking(getBookingRequest());
     registerBookingCleanup(response);
     response.then().statusCode(201).body("bookingid", greaterThan(0));
-    TestContext.put(BOOKING_ID_CONTEXT_KEY, response.jsonPath().getInt("bookingid"));
+    TestContext.setBookingId(response.jsonPath().getInt("bookingid"));
     storeResponse(response);
   }
 
@@ -111,7 +104,7 @@ public class BookingSteps {
   public void iUpdateTheBooking() {
     BookingRequest updated = updatedBookingRequest();
     storeResponse(bookingClient.updateBooking(getBookingId(), updated, getToken()));
-    TestContext.put(UPDATED_FIRST_NAME_CONTEXT_KEY, updated.getFirstname());
+    TestContext.setUpdatedFirstName(updated.getFirstname());
   }
 
   @Then("the updated booking should be returned")
@@ -125,7 +118,7 @@ public class BookingSteps {
     storeResponse(
         bookingClient.patchBooking(
             getBookingId(), Map.of("firstname", updatedFirstName), getToken()));
-    TestContext.put(UPDATED_FIRST_NAME_CONTEXT_KEY, updatedFirstName);
+    TestContext.setUpdatedFirstName(updatedFirstName);
   }
 
   @Then("the partial update should be returned")
@@ -143,7 +136,7 @@ public class BookingSteps {
   }
 
   private void assertUpdatedFirstName() {
-    String expectedFirstName = TestContext.get(UPDATED_FIRST_NAME_CONTEXT_KEY, String.class);
+    String expectedFirstName = TestContext.updatedFirstName();
     getBookingResponse().then().body("firstname", equalTo(expectedFirstName));
   }
 
@@ -176,7 +169,6 @@ public class BookingSteps {
   private String tokenForState(String tokenState) {
     return switch (tokenState) {
       case "missing" -> null;
-      case "expired" -> "expired-test-token";
       case "invalid" -> "invalid-test-token";
       default -> throw new IllegalArgumentException("Unsupported token state: " + tokenState);
     };
@@ -188,8 +180,7 @@ public class BookingSteps {
   }
 
   private void storeResponse(Response response) {
-    TestContext.put(BOOKING_RESPONSE_CONTEXT_KEY, response);
-    TestContext.put(TestContext.API_RESPONSE_CONTEXT_KEY, response);
+    TestContext.setLatestResponse(response);
   }
 
   private void registerBookingCleanup(Response response) {
@@ -216,18 +207,18 @@ public class BookingSteps {
   }
 
   private BookingRequest getBookingRequest() {
-    return TestContext.get(BOOKING_REQUEST_CONTEXT_KEY, BookingRequest.class);
+    return TestContext.bookingRequest();
   }
 
   private Response getBookingResponse() {
-    return TestContext.get(BOOKING_RESPONSE_CONTEXT_KEY, Response.class);
+    return TestContext.latestResponse();
   }
 
   private int getBookingId() {
-    return TestContext.get(BOOKING_ID_CONTEXT_KEY, Integer.class);
+    return TestContext.bookingId();
   }
 
   private String getToken() {
-    return TestContext.get(TOKEN_CONTEXT_KEY, String.class);
+    return TestContext.token();
   }
 }

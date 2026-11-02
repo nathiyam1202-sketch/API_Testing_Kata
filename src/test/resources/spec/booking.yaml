@@ -38,10 +38,10 @@ paths:
               properties:
                 username:
                   type: string
-                  example: admin
+                  example: replace-with-configured-username
                 password:
                   type: string
-                  example: password
+                  example: replace-with-configured-password
       responses:
         '200':
           description: Token successfully generated
