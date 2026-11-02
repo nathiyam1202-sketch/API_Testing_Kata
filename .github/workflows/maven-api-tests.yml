@@ -34,7 +34,14 @@ jobs:
           BASE_URL: https://automationintesting.online/api
           AUTH_USERNAME: ${{ secrets.BOOKING_API_USERNAME }}
           AUTH_PASSWORD: ${{ secrets.BOOKING_API_PASSWORD }}
-        run: mvn --batch-mode --no-transfer-progress verify '-Dcucumber.filter.tags=@booking'
+        run: |
+          if [ -n "$AUTH_USERNAME" ] && [ -n "$AUTH_PASSWORD" ]; then
+            echo "Booking API credentials are configured; running live scenarios."
+            mvn --batch-mode --no-transfer-progress verify '-Dcucumber.filter.tags=@booking'
+          else
+            echo "::notice title=Live API tests skipped::Configure BOOKING_API_USERNAME and BOOKING_API_PASSWORD to run live Booking API scenarios. Running a dry-run to validate feature bindings."
+            mvn --batch-mode --no-transfer-progress verify '-Dcucumber.filter.tags=@booking' -Dcucumber.execution.dry-run=true
+          fi
 
       - name: Upload API test reports
         if: always()

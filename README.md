@@ -80,7 +80,7 @@ Cucumber writes reports to `target/`:
 GitHub Actions runs on pushes, pull requests, and manual dispatch:
 
 - `maven.yml` compiles and dry-runs the Booking feature to validate step bindings without external API requests.
-- `maven-api-tests.yml` runs the `@booking` scenarios against the configured API.
+- `maven-api-tests.yml` runs the `@booking` scenarios against the configured API when both `BOOKING_API_USERNAME` and `BOOKING_API_PASSWORD` secrets are set. If either secret is missing, it emits a notice and runs a dry-run to validate feature bindings instead; no live API behavior is tested in that case.
 - Both workflows upload Cucumber and Surefire reports.
 
 ## Architecture
