@@ -24,6 +24,27 @@ public final class TestContext {
     return requireValue(scenarioState().bookingRequest, "Booking request");
   }
 
+  public static void setSecondBooking(BookingRequest bookingRequest, int bookingId) {
+    if (bookingId <= 0) {
+      throw new IllegalArgumentException("Booking ID must be positive");
+    }
+    ScenarioState state = scenarioState();
+    state.secondBookingRequest = requireValue(bookingRequest, "Second booking request");
+    state.secondBookingId = bookingId;
+  }
+
+  public static BookingRequest secondBookingRequest() {
+    return requireValue(scenarioState().secondBookingRequest, "Second booking request");
+  }
+
+  public static int secondBookingId() {
+    int bookingId = scenarioState().secondBookingId;
+    if (bookingId <= 0) {
+      throw new IllegalStateException("No second booking ID is available in the current scenario");
+    }
+    return bookingId;
+  }
+
   public static void setBookingId(int bookingId) {
     if (bookingId <= 0) {
       throw new IllegalArgumentException("Booking ID must be positive");
@@ -131,7 +152,9 @@ public final class TestContext {
 
   private static final class ScenarioState {
     private BookingRequest bookingRequest;
+    private BookingRequest secondBookingRequest;
     private int bookingId;
+    private int secondBookingId;
     private String token;
     private String updatedFirstName;
     private Response latestResponse;

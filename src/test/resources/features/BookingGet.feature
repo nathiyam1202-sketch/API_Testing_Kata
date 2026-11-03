@@ -5,12 +5,16 @@ Feature: Retrieve booking
     And I have a valid booking request
     And a booking exists
 
-  @happy @positive
-  Scenario: Retrieve an existing booking
+  @happy @positive @BOOK_GET_003 @BOOK_GET_005 @BOOK_GET_006 @BOOK_GET_007 @BOOK_GET_008 @BOOK_INT_003
+  Scenario: BOOK_003 Retrieve a booking using its ID
+    When I retrieve the booking
+    Then the API response should match the "booking" JSON schema
+    And the booking dates should use the documented ISO format
+
+  @happy @positive @BOOK_004
+  Scenario: BOOK_004 Retrieved booking details match submitted values
     When I retrieve the booking
     Then the booking details should match the created booking
-    And the API response status code should be 200
-    And the API response should match the "booking" JSON schema
 
   @unhappy @negative
   Scenario Outline: Reject a <token_state> token when retrieving a booking

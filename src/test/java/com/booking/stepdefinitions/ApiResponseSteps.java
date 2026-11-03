@@ -10,16 +10,32 @@ import java.util.Map;
 public class ApiResponseSteps {
   @Then("the API response status code should be {int}")
   public void theApiResponseStatusCodeShouldBe(int expectedStatusCode) {
-    Response response = getApiResponse();
-    int actualStatusCode = response.statusCode();
-    if (actualStatusCode != expectedStatusCode) {
-      throw new AssertionError(
-          "Expected HTTP status " + expectedStatusCode + " but was " + actualStatusCode);
-    }
+    assertStatusCode(expectedStatusCode);
   }
 
   @Then("the API response error message should contain {string}")
   public void theApiResponseErrorMessageShouldContain(String expectedMessage) {
+    if (expectedMessage == null || expectedMessage.isBlank()) {
+      throw new IllegalArgumentException("Expected error message must not be blank");
+    }
+
+    assertErrorMessageContains(expectedMessage);
+  }
+
+  @Then("the API response should have status code {int} and a validation error")
+  public void theApiResponseShouldHaveStatusAndValidationError(int expectedStatusCode) {
+    assertStatusCode(expectedStatusCode);
+    assertValidationError();
+  }
+
+  @Then("the API response should have status code {int} and error message containing {string}")
+  public void theApiResponseShouldHaveStatusAndErrorMessage(
+      int expectedStatusCode, String expectedMessage) {
+    assertStatusCode(expectedStatusCode);
+    assertErrorMessageContains(expectedMessage);
+  }
+
+  private void assertErrorMessageContains(String expectedMessage) {
     if (expectedMessage == null || expectedMessage.isBlank()) {
       throw new IllegalArgumentException("Expected error message must not be blank");
     }
@@ -44,14 +60,18 @@ public class ApiResponseSteps {
 
   @Then("the API response should contain a validation error")
   public void theApiResponseShouldContainAValidationError() {
-    Response response = getApiResponse();
-    List<String> actualMessages = new ArrayList<>();
-    collectMessages(response.jsonPath().get("error"), actualMessages);
-    collectMessages(response.jsonPath().get("errors"), actualMessages);
-    collectMessages(response.jsonPath().get("message"), actualMessages);
+    assertValidationError();
+  }
 
-    if (actualMessages.isEmpty()) {
-      throw new AssertionError("Expected a validation error message in the API response");
+  private void assertValidationError() {
+    Object value = getApiResponse().jsonPath().get("errors");
+    if (!(value instanceof List<?> errors) || errors.isEmpty()) {
+      throw new AssertionError("Expected a non-empty errors array in the validation response");
+    }
+    for (Object error : errors) {
+      if (!(error instanceof String message) || message.isBlank()) {
+        throw new AssertionError("Expected each validation error to be a non-blank string");
+      }
     }
   }
 
@@ -79,6 +99,14 @@ public class ApiResponseSteps {
 
   private Response getApiResponse() {
     return TestContext.latestResponse();
+  }
+
+  private void assertStatusCode(int expectedStatusCode) {
+    int actualStatusCode = getApiResponse().statusCode();
+    if (actualStatusCode != expectedStatusCode) {
+      throw new AssertionError(
+          "Expected HTTP status " + expectedStatusCode + " but was " + actualStatusCode);
+    }
   }
 
   private void collectMessages(Object value, List<String> messages) {

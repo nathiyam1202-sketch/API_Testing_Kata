@@ -27,6 +27,43 @@ public final class BookingRequestVariations {
     return bookingRequest;
   }
 
+  public static Map<String, Object> withInvalidPayload(String variation) {
+    Map<String, Object> bookingPayload = BookingDataGenerator.generateBooking();
+    switch (variation) {
+      case "empty_firstname" -> bookingPayload.put("firstname", "");
+      case "blank_lastname" -> bookingPayload.put("lastname", " ");
+      case "null_email" -> bookingPayload.put("email", null);
+      case "empty_email" -> bookingPayload.put("email", "");
+      case "long_lastname" -> bookingPayload.put("lastname", "L".repeat(31));
+      case "malformed_phone" -> bookingPayload.put("phone", "abc");
+      case "invalid_date_format" -> replaceCheckinWithInvalidDate(bookingPayload);
+      case "invalid_roomid_type" -> bookingPayload.put("roomid", "2");
+      default -> throw new IllegalArgumentException("Unsupported payload variation: " + variation);
+    }
+    return bookingPayload;
+  }
+
+  private static void replaceCheckinWithInvalidDate(Map<String, Object> bookingPayload) {
+    Object value = bookingPayload.get(BOOKING_DATES_FIELD);
+    if (!(value instanceof Map<?, ?> existingDates)) {
+      throw new IllegalStateException("Generated booking payload has no bookingdates object");
+    }
+
+    Object checkout = existingDates.get("checkout");
+    if (!(checkout instanceof String checkoutDate)) {
+      throw new IllegalStateException("Generated booking payload has no checkout date");
+    }
+    bookingPayload.put(
+        BOOKING_DATES_FIELD, Map.of("checkin", "not-a-date", "checkout", checkoutDate));
+  }
+
+  public static BookingRequest withSpecialCharactersInNames() {
+    BookingRequest bookingRequest = BookingDataGenerator.generateBookingRequest();
+    bookingRequest.setFirstname("A!x");
+    bookingRequest.setLastname("O'Neil-Smith");
+    return bookingRequest;
+  }
+
   public static BookingRequest violatingDateRule(String dateRule) {
     BookingRequest bookingRequest = BookingDataGenerator.generateBookingRequest();
     LocalDate checkin = LocalDate.parse(bookingRequest.getBookingdates().getCheckin());

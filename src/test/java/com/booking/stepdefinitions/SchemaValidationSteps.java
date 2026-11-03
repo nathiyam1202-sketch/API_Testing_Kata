@@ -21,6 +21,16 @@ public class SchemaValidationSteps {
     }
 
     Response response = TestContext.latestResponse();
+    int expectedStatusCode = schemaName.equals("booking creation") ? 201 : 200;
+    if (response.statusCode() != expectedStatusCode) {
+      throw new AssertionError(
+          "Expected HTTP status "
+              + expectedStatusCode
+              + " before validating the "
+              + schemaName
+              + " response schema, but was "
+              + response.statusCode());
+    }
     response.then().body(matchesJsonSchemaInClasspath(schemaPath));
   }
 }
