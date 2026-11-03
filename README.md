@@ -64,6 +64,8 @@ Booking scenarios are split by endpoint operation: `BookingCollection.feature` c
 
 The API specification does not define a separate expired-token behavior, so the suite does not label an invalid fixture as an expired token. Some booking read/mutation and cleanup operations have returned HTTP 500 from the public service. Live behavior depends on service availability and state.
 
+Scenarios are classified with `@happy`/`@positive` for successful flows and `@unhappy`/`@negative` for rejected flows. `@invalid` selects malformed or invalid request/token cases. For example, run only invalid scenarios with `mvn test '-Dcucumber.filter.tags=@invalid'`.
+
 ## Reports
 
 Cucumber writes reports to `target/`:

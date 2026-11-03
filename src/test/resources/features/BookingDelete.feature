@@ -5,10 +5,12 @@ Feature: Delete booking
     And I have a valid booking request
     And a booking exists
 
+  @happy @positive
   Scenario: Delete an existing booking
     When I delete the booking
     Then the API response status code should be 201
 
+  @unhappy @negative
   Scenario Outline: Reject a <token_state> token when deleting a booking
     When I call the protected booking endpoint "delete" with a "<token_state>" token
     Then the API response status code should be 401
@@ -16,4 +18,8 @@ Feature: Delete booking
     Examples:
       | token_state |
       | missing     |
+
+    @invalid
+    Examples:
+      | token_state |
       | invalid     |

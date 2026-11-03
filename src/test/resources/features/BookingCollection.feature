@@ -4,12 +4,14 @@ Feature: Booking collection
     Given I am authenticated
     And I have a valid booking request
 
+  @happy @positive
   Scenario: Create a booking successfully
     When I create a booking
     Then the booking should be created successfully
     And the API response status code should be 201
     And the API response should match the "booking creation" JSON schema
 
+  @unhappy @negative @invalid
   Scenario Outline: Reject a booking with invalid <field>
     Given I have a booking request with invalid "<field>"
     When I create a booking
@@ -22,6 +24,7 @@ Feature: Booking collection
       | lastname  | 400    | size must be between 3 and 30 |
       | phone     | 400    | size must be between 11 and 21 |
 
+  @unhappy @negative @invalid
   Scenario Outline: Reject a booking when <date_rule>
     Given I have a booking request violating date rule "<date_rule>"
     When I create a booking
@@ -33,6 +36,7 @@ Feature: Booking collection
       | checkout_before_checkin  |
       | checkout_same_as_checkin |
 
+  @unhappy @negative @invalid
   Scenario Outline: Reject a booking when mandatory field <field> is missing
     When I create a booking with a missing "<field>" field
     Then the API response status code should be 400
@@ -50,6 +54,7 @@ Feature: Booking collection
       | email                 |
       | phone                 |
 
+  @unhappy @negative @invalid
   Scenario Outline: Reject a booking with malformed email <email>
     Given I have a booking request with malformed email "<email>"
     When I create a booking
